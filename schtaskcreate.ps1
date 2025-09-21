@@ -23,16 +23,16 @@ try {
 
 # === Create scheduled task ===
 $taskName = "WingetAutoUpdate"
+$taskDescription = "Runs daily to update installed apps via Winget and show toast notifications"
 $scriptPath = Join-Path $targetFolder "WingetUpdate.ps1"
 
 $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`""
 $trigger = New-ScheduledTaskTrigger -Daily -At 9:00AM
-$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
-    -StartWhenAvailable -WakeToRun -AllowHardTerminate
+$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -WakeToRun
 
 try {
     Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger `
-        -Settings $settings -User "$env:USERNAME" -RunLevel Highest -Force
+        -Settings $settings -User "$env:USERNAME" -RunLevel Highest -Description $taskDescription -Force
     Write-Host "✅ Scheduled task '$taskName' created successfully."
 } catch {
     Write-Host "❌ Failed to create scheduled task: $_"
