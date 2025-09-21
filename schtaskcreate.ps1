@@ -11,11 +11,15 @@ $iconPendingUrl = "$repoBase/update_pending.png"
 $iconDoneUrl = "$repoBase/update_done.png"
 
 # === Download files ===
-Invoke-WebRequest -Uri $updateScriptUrl -OutFile (Join-Path $targetFolder "WingetUpdate.ps1") -UseBasicParsing
-Invoke-WebRequest -Uri $iconPendingUrl -OutFile (Join-Path $iconFolder "update_pending.png") -UseBasicParsing
-Invoke-WebRequest -Uri $iconDoneUrl -OutFile (Join-Path $iconFolder "update_done.png") -UseBasicParsing
-
-Write-Host "✅ Files downloaded to $targetFolder"
+try {
+    Invoke-WebRequest -Uri $updateScriptUrl -OutFile (Join-Path $targetFolder "WingetUpdate.ps1") -UseBasicParsing
+    Invoke-WebRequest -Uri $iconPendingUrl -OutFile (Join-Path $iconFolder "update_pending.png") -UseBasicParsing
+    Invoke-WebRequest -Uri $iconDoneUrl -OutFile (Join-Path $iconFolder "update_done.png") -UseBasicParsing
+    Write-Host "✅ Files downloaded to $targetFolder"
+} catch {
+    Write-Host "❌ Failed to download one or more files: $_"
+    return
+}
 
 # === Create scheduled task ===
 $taskName = "WingetAutoUpdate"
@@ -25,7 +29,11 @@ $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-WindowSt
 $trigger = New-ScheduledTaskTrigger -Daily -At 9:00AM
 $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
     -StartWhenAvailable -WakeToRun -AllowHardTerminate
-Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger `
-    -Settings $settings -User "$env:USERNAME" -RunLevel Highest -Force
 
-Write-Host "✅ Scheduled task '$taskName' created successfully."
+try {
+    Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger `
+        -Settings $settings -User "$env:USERNAME" -RunLevel Highest -Force
+    Write-Host "✅ Scheduled task '$taskName' created successfully."
+} catch {
+    Write-Host "❌ Failed to create scheduled task: $_"
+}
